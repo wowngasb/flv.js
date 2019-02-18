@@ -22,7 +22,7 @@ export const defaultConfig = {
     stashInitialSize: undefined,
 
     isLive: false,
-
+    debug: true,
     lazyLoad: true,
     lazyLoadMaxDuration: 3 * 60,
     lazyLoadRecoverDuration: 30,

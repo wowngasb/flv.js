@@ -49,6 +49,10 @@ class FLVDemuxer {
         this.TAG = 'FLVDemuxer';
 
         this._config = config;
+        this._debug = config.debug && typeof console != 'undefined' && typeof console.log == 'function';
+        this._error = (tag, msg) => {
+            this._debug && typeof console != 'undefined' && typeof console.log == 'function' && console.log('[DEBUG]', tag, msg);
+        };
 
         this._onError = null;
         this._onMediaInfo = null;
@@ -448,6 +452,7 @@ class FLVDemuxer {
                 this._onScriptDataArrived(Object.assign({}, scriptData));
             }
         }
+        this._error('_parseScriptData', scriptData);
     }
 
     _parseKeyframesIndex(keyframes) {
@@ -621,6 +626,7 @@ class FLVDemuxer {
             track.samples.push(mp3Sample);
             track.length += data.length;
         }
+        this._error('_parseAudioData track', track);
     }
 
     _parseAACAudioData(arrayBuffer, dataOffset, dataSize) {
@@ -1036,6 +1042,8 @@ class FLVDemuxer {
         // notify new metadata
         this._dispatch = false;
         this._onTrackMetadata('video', meta);
+
+        this._error('_parseAVCDecoderConfigurationRecord meta', meta);
     }
 
     _parseAVCVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType, cts) {
@@ -1093,6 +1101,8 @@ class FLVDemuxer {
             }
             track.samples.push(avcSample);
             track.length += length;
+
+            this._error('_parseAVCVideoData meta', track);
         }
     }
 
