@@ -8,6 +8,12 @@ from flvlib.astypes import MalformedFLV
 log = logging.getLogger('flvlib.debug-flv')
 log.setLevel(logging.ERROR)
 
+def tryFixAudioTag(tag):
+    return tag
+
+def tryFixVideoTag(tag):
+    return tag
+
 def debug_file(filename, quiet=False, metadata=False):
     try:
         f = open(filename, 'rb')
@@ -21,18 +27,30 @@ def debug_file(filename, quiet=False, metadata=False):
         print "=== `%s' ===" % filename
 
     ret_tags = []
+    ret_msg = []
     try:
         tag_generator = flv.iter_tags()
         for i, tag in enumerate(tag_generator):
-            ret_tags.append(tag)
-            if quiet:
-                # If we're quiet, we just want to catch errors
-                continue
             # Print the tag information
-            print "#%05d %s" % (i + 1, tag)
             # Print the content of onMetaData tags
+            msg = ''
             if (isinstance(tag, tags.ScriptTag) and tag.name == "onMetaData"):
-                helpers.pprint(tag.variable)
+                if not quiet:
+                    helpers.pprint(tag.variable)
+                    msg = "#%05d %s" % (i + 1, tag)
+            elif isinstance(tag, tags.AudioTag) and tag.aac_packet_type == 1:  # AAC raw frame data
+                msg = ("#%05d %s" % (i + 1, tag)).replace('AudioTag', 'AudioTag[%d]' % (len(tag.raw_data), ))
+                tag = tryFixAudioTag(tag)
+            elif isinstance(tag, tags.VideoTag) and tag.h264_packet_type == 1:  # AAC raw frame data
+                msg = ("#%05d %s" % (i + 1, tag)).replace('VideoTag', 'VideoTag[%d]' % (tag.avc_raw.get('all_len', 0), ))
+                tag = tryFixVideoTag(tag)
+            else:
+                if not quiet:
+                    msg = "#%05d %s" % (i + 1, tag)
+
+            ret_tags.append(tag)
+            if msg:
+                ret_msg.append(msg)
     except MalformedFLV, e:
         message = e[0] % e[1:]
         log.error("The file `%s' is not a valid FLV file: %s",
@@ -44,6 +62,7 @@ def debug_file(filename, quiet=False, metadata=False):
 
     f.close()
 
+    print "\n".join(ret_msg)
     return ret_tags
 
 def main():

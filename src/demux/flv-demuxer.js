@@ -547,6 +547,8 @@ class FLVDemuxer {
                 meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
                 Log.v(this.TAG, 'Parsed AudioSpecificConfig');
 
+                this._error('_parseAudioData AAC meta', meta);
+
                 if (this._isInitialMetadataDispatched()) {
                     // Non-initial metadata, force dispatch (or flush) parsed frames to remuxer
                     if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
@@ -578,6 +580,8 @@ class FLVDemuxer {
                 let aacSample = {unit: aacData.data, length: aacData.data.byteLength, dts: dts, pts: dts};
                 track.samples.push(aacSample);
                 track.length += aacData.data.length;
+
+                this._error('_parseAudioData AAC raw frame <' + aacData.data.length + '>', aacSample);
             } else {
                 Log.e(this.TAG, `Flv: Unsupported AAC data type ${aacData.packetType}`);
             }
@@ -598,6 +602,8 @@ class FLVDemuxer {
 
                 this._audioInitialMetadataDispatched = true;
                 this._onTrackMetadata('audio', meta);
+
+                this._error('_parseAudioData MP3 meta', meta);
 
                 let mi = this._mediaInfo;
                 mi.audioCodec = meta.codec;
@@ -626,7 +632,7 @@ class FLVDemuxer {
             track.samples.push(mp3Sample);
             track.length += data.length;
         }
-        this._error('_parseAudioData track', track);
+        
     }
 
     _parseAACAudioData(arrayBuffer, dataOffset, dataSize) {
@@ -843,7 +849,7 @@ class FLVDemuxer {
         let frameType = (spec & 240) >>> 4;
         let codecId = spec & 15;
 
-        if (codecId !== 7) {
+        if (codecId !== 7) {  //  CODEC_ID_H264  H.264
             this._onError(DemuxErrors.CODEC_UNSUPPORTED, `Flv: Unsupported codec in video frame: ${codecId}`);
             return;
         }
@@ -1102,7 +1108,7 @@ class FLVDemuxer {
             track.samples.push(avcSample);
             track.length += length;
 
-            this._error('_parseAVCVideoData meta', track);
+            this._error('_parseAVCVideoData raw frame <' + length + '>', avcSample);
         }
     }
 
