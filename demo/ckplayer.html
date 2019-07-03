@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <title>flv.js demo</title>
+    <script type="text/javascript" src="/ckplayer/ckplayer.js" charset="utf-8"></script>
+  </head>
+  
+  <body>
+    <div id="video" style="width:600px;height:400px;"></div>
+    <script type="text/javascript">
+    	var videoObject = {
+    		container: '#video',//“#”代表容器的ID，“.”或“”代表容器的class
+    		variable: 'player',//该属性必需设置，值等于下面的new chplayer()的对象
+    		flashplayer:true,//如果强制使用flashplayer则设置成true
+    		video:'http://wsrtmp-a.xdysoft.com/xdylive/nSMEoiYN.flv?wsSecret=3d18e4b130269795cb69f88c390c79ec&wsTime=1561690763'//视频地址
+    	};
+    	var player=new ckplayer(videoObject);
+    </script>
+  </body>
+
+</html>

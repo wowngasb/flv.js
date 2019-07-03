@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-
+import urllib2
+import os
 from flvlib import tags
 from flvlib import helpers
 from flvlib.astypes import MalformedFLV
@@ -14,9 +15,58 @@ def tryFixAudioTag(tag):
 def tryFixVideoTag(tag):
     return tag
 
+class HttpFile(object):
+    def __init__(self, f, block = 8096):
+        self.f = f
+        self.block = block
+
+        self._i = 0
+        _size = self.f.headers.get('content-length', '-1')
+        self._size = int(_size) if _size.isalnum() and int(_size) >= 0 else -1
+        self._buffer = self.f.read(self.block)
+        self._eof = False
+        self._n = 0
+
+    def read(self, n = 8096):
+        n = int(n) if n and int(n) > 0 else 0
+        if n <= 0 or self._i >= len(self._buffer):
+            return ''
+
+        _i = self._i
+        self._i += n
+        while self._i > len(self._buffer) and not self._eof:
+            tmp = self.f.read(self.block)
+            if not tmp or len(tmp) < self.block:
+                self._eof= True
+
+            self._buffer += tmp if tmp else ''
+
+        self._n += 1
+        if self._n % 10 == 0:
+            pass
+        else:
+            print "read %d:%d\n" % (_i, n)
+        return self._buffer[_i:self._i]
+
+    def seek(self, i, b = os.SEEK_SET):
+        i = int(i) if i and int(i) > 0 else 0
+
+        if b == os.SEEK_CUR:
+            self._i += i
+        elif b == os.SEEK_SET:
+            self._i = i
+        elif b == os.SEEK_END:
+            raise NotImplementedError("no end")
+
+    def tell(self):
+        return self._i
+
 def debug_file(filename, quiet=False, metadata=False):
     try:
-        f = open(filename, 'rb')
+        if filename.startswith('http://') or filename.startswith('https://'):
+            f = HttpFile(urllib2.urlopen(filename))
+        else:
+            f = open(filename, 'rb')
     except IOError, (errno, strerror):
         log.error("Failed to open `%s': %s", filename, strerror)
         return []
@@ -66,7 +116,8 @@ def debug_file(filename, quiet=False, metadata=False):
     return ret_tags
 
 def main():
-    ret_tags = debug_file("source.flv", False, True)
+    globals()['STRICT_PARSING'] = False
+    ret_tags = debug_file("http://s4-play.xdysoft.com/xdylive/ud1nPGQ0.flv", False, False)
     ret_tags
 
 if __name__ == "__main__":
